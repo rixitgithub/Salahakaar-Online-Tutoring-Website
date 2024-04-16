@@ -1,0 +1,72 @@
+.hero {
+  padding: 5px 0; /* Reduced padding */
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 60px; /* Reduced height */
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+}
+
+.username {
+  margin-right: 10px; /* Add margin to the right of the username */
+}
+
+/* Style for the login button */
+.login-btn {
+  border: 1px solid white; /* White border */
+  margin-left: 10px; /* Add margin to the left of the login button */
+  padding: 5px 10px; /* Add padding to the login button */
+  background-color: #9a1750; /* Background color */
+  color: white; /* Text color */
+  text-decoration: none; /* Remove underline */
+  border-radius: 5px; /* Add border radius */
+  cursor: pointer; /* Change cursor to pointer */
+}
+
+/* Style for the login button on hover */
+.login-btn:hover {
+  background-color: #7c113b; /* Darker background color on hover */
+}
+
+.left {
+  flex: 1;
+}
+
+.center {
+  flex: 2;
+}
+
+.right {
+  flex: 1;
+  text-align: right;
+}
+
+.nav-links {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-links li {
+  display: inline-block;
+  margin-right: 20px;
+}
+
+.nav-links li:last-child {
+  margin-right: 0;
+}
+
+.nav-links li a {
+  text-decoration: none;
+  color: #333;
+}

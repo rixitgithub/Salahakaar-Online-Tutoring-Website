@@ -1,0 +1,98 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.detailsContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 50px;
+}
+
+.divcontainer {
+  display: flex;
+  width: 100%;
+  margin-top: 70px;
+}
+
+.left-container {
+  flex: 2; /* Take up 2/3 of the available space */
+  background-color: #ccc;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+}
+
+.right-container {
+  flex: 1; /* Take up 1/3 of the available space */
+  background-color: #9a1750;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+  height: 45vh;
+}
+
+.spacing {
+  width: 20px; /* Adjust spacing width as needed */
+}
+
+.message {
+  font-size: 18px;
+  color: red;
+}
+
+.upperdetails {
+  display: flex;
+}
+
+.upperdetails {
+  display: flex;
+  align-items: center;
+}
+
+.profile-image {
+  width: 60px; /* Adjust size as needed */
+  margin-right: 20px; /* Adjust margin as needed */
+}
+
+.upperinfo {
+  flex: 1;
+  margin-left: 3rem;
+}
+
+.upperinfo1 {
+  display: flex;
+}
+
+.location {
+  margin-left: 2rem;
+}
+.name {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.qualifications {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.price {
+  font-size: 18px;
+  font-weight: bold;
+}
+.socials,
+.reviews,
+.subjects {
+  margin-top: 3rem;
+}
+.reviews p {
+  text-align: center;
+}
+.links {
+  display: flex;
+  justify-content: space-evenly;
+}

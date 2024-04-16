@@ -1,0 +1,62 @@
+.tutor-cards-container {
+  padding: 20px;
+}
+
+.content-wrapper {
+  display: flex;
+}
+
+.tutor-cards {
+  flex: 3;
+  margin-right: 20px;
+}
+
+.tutor-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+.tutor-card h3 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.tutor-card p {
+  margin: 5px 0;
+}
+
+.filter-panel {
+  flex: 1;
+  position: sticky;
+  top: 0px;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.filter-panel h3 {
+  margin-bottom: 10px;
+}
+
+.filter-input {
+  margin-bottom: 10px;
+}
+
+.filter-input label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.filter-input input {
+  width: 100%;
+  height: 30px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}

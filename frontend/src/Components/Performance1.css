@@ -1,0 +1,23 @@
+.banner {
+  margin-top: 4.9rem;
+  display: flex;
+  flex-direction: coloumn;
+  align-items: center;
+  background-color: #9a1750;
+  color: white;
+  height: 10rem;
+  padding: 10px 10px 10px 10px;
+}
+
+.banner h2{
+  flex: 2;
+  text-align: center;
+  padding: 40px 10px 40px 10px;
+  width: 60%;
+}
+.banner bttn{
+  flex:1;
+  padding: 40px 10px 40px 10px;
+  height: 800px;
+  width: 50px;
+}

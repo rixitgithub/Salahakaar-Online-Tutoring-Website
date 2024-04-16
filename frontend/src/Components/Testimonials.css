@@ -1,0 +1,86 @@
+
+#abc{
+  padding-top: 20px;
+  font-size: 3.5rem;
+  text-align: center;
+  font-family: "Fjalla One", sans-serif;
+  margin-top: 10px; 
+  padding-bottom: 20px;
+}
+section{
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-evenly;
+  
+}
+.user{
+  display: flex;
+  flex-direction: column;
+  border: 2px solid black;
+  flex-basis: 25%;
+  height: 500px;
+  align-items: center;
+  justify-content: space-around;
+}
+.avatar img{
+  flex: 1;
+  padding-top: 20px;
+  border-radius: 100%;
+  width: 120px;
+}
+.text{
+  flex: 2;
+  padding: 20px 10px 5px 10px;
+  text-align: center;
+}
+.name{
+  flex: 2;
+}
+.icon{
+  flex: 2;
+  font-size: 25px;
+}
+.icon a{
+  text-decoration: none;
+  color: #9a1750;
+  padding: 0 10px 0 10px;
+}
+/*
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: #9a1750;
+  height: 2rem;
+  width: 10rem;
+  border: 1px solid black;
+  border-radius: 2rem;
+  margin-left: 45%;
+  margin-top: -15rem;
+}
+.findbutton {
+  color: white;
+}
+.button:hover {
+  transition: 0.9s ease-in-out;
+  background-color: #ed619e;
+}
+.cardsContainer {
+  display: flex;
+}
+.card {
+  flex: 1;
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+.cardImage {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+.cardContent {
+  text-align: center;
+} */
