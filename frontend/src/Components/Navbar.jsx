@@ -35,7 +35,7 @@ function Navbar() {
       setIsLoggedIn(false);
       setUsername("");
     }
-  }, [isLoggedIn]); // Update when isLoggedIn changes
+  }, []); // Run once on component mount
 
   // useEffect to check if user is a tutor
   useEffect(() => {

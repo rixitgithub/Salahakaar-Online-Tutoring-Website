@@ -10,12 +10,15 @@ const Inbox = () => {
   const [isTutor, setIsTutor] = useState(false);
   const [showcreateOfferPopup, setShowCreateOfferPopup] = useState(false);
   const [showcreateMeetingrPopup, setShowCreateMeetingPopup] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOption, setSelectedOption] = useState("single"); // Make "single" the default option
   const [uniqueCode, setUniqueCode] = useState("");
   const [price, setPrice] = useState("");
   const [numberOfSessions, setNumberOfSessions] = useState("");
   const [description, setDescription] = useState("");
   const [offers, setOffers] = useState([]);
+  const [date, setDate] = useState(""); // Add date state
+  const [time, setTime] = useState(""); // Add time state
+  const [duration, setDuration] = useState(""); // Add duration state
   const navigate = useNavigate();
 
   const [roomCode, setRoomCode] = useState("");
@@ -46,6 +49,7 @@ const Inbox = () => {
         },
       });
       const data = await response.json();
+      console.log("usernames", data);
       setUsernames(data.users);
     } catch (error) {
       console.error("Error fetching usernames:", error);
@@ -142,6 +146,7 @@ const Inbox = () => {
   const handleCreateOffer = () => {
     setShowCreateOfferPopup(true);
     setUniqueCode(generateUniqueCode());
+    setSelectedOption("single"); // Make "single" the default option
   };
 
   const handleCreateMeeting = () => {
@@ -175,12 +180,34 @@ const Inbox = () => {
           numberOfSessions:
             selectedOption === "multiple" ? numberOfSessions : null,
           price: price,
+          date: date, // Add date
+          time: time, // Add time
+          duration: duration, // Add duration
         }),
       });
       const data = await response.json();
       setShowCreateOfferPopup(false);
     } catch (error) {
       console.error("Error creating offer:", error);
+    }
+  };
+
+  const handleAcceptOffer = async (offerId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:8531/accept-offer/${offerId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await response.json();
+      // Handle success
+    } catch (error) {
+      console.error("Error accepting offer:", error);
     }
   };
 
@@ -288,36 +315,96 @@ const Inbox = () => {
                 onChange={(e) => setDescription(e.target.value)}
               ></textarea>
               {selectedOption === "single" && (
-                <div>
-                  <label>Price:</label>
-                  <input
-                    type="number"
-                    placeholder="Enter price"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    required
-                  />
-                </div>
+                <>
+                  <div>
+                    <label>Date:</label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>Time:</label>
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>Price:</label>
+                    <input
+                      type="number"
+                      placeholder="Enter price"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>Duration (in minutes):</label>
+                    <input
+                      type="number"
+                      placeholder="Enter duration"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
               )}
               {selectedOption === "multiple" && (
-                <div>
-                  <label>Number of Sessions:</label>
-                  <input
-                    type="number"
-                    placeholder="Enter number of sessions"
-                    value={numberOfSessions}
-                    onChange={(e) => setNumberOfSessions(e.target.value)}
-                    required
-                  />
-                  <label>Price:</label>
-                  <input
-                    type="number"
-                    placeholder="Enter price"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    required
-                  />
-                </div>
+                <>
+                  <div>
+                    <label>Date:</label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>Time:</label>
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>Number of Sessions:</label>
+                    <input
+                      type="number"
+                      placeholder="Enter number of sessions"
+                      value={numberOfSessions}
+                      onChange={(e) => setNumberOfSessions(e.target.value)}
+                      required
+                    />
+                    <label>Price:</label>
+                    <input
+                      type="number"
+                      placeholder="Enter price"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      required
+                    />
+                    <div>
+                      <label>Duration (in hours):</label>
+                      <input
+                        type="number"
+                        placeholder="Enter duration"
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
               )}
               <button onClick={handleOffer}>Offer</button>
             </div>
@@ -328,11 +415,30 @@ const Inbox = () => {
         <h2>Offers</h2>
         {offers.map((offer, index) => (
           <div key={index} className="offer">
-            <div>Description: {offer.description}</div>
-            <div>Type: {offer.type}</div>
-            <div>Price: {offer.price}</div>
-            {offer.numberOfSessions && (
-              <div>Number of Sessions: {offer.numberOfSessions}</div>
+            <div className="offer-details">
+              <div>Description: {offer.description}</div>
+              <div>Type: {offer.type}</div>
+              <div>Price: {offer.price}</div>
+              {offer.numberOfSessions && (
+                <div>Number of Sessions: {offer.numberOfSessions}</div>
+              )}
+              <div>Date: {new Date(offer.date).toLocaleDateString()}</div>
+              <div>Time: {offer.time}</div>
+              <div>Duration: {offer.duration} hours</div>
+            </div>
+            {offer.status === "pending" && isTutor && (
+              <div className="offer-status">
+                Pending <span className="icon">⏰</span>
+              </div>
+            )}
+            {!isTutor && (
+              <div className="offer-actions">
+                {offer.status === "pending" && (
+                  <button onClick={() => handleAcceptOffer(offer._id)}>
+                    Accept
+                  </button>
+                )}
+              </div>
             )}
           </div>
         ))}

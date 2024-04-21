@@ -170,3 +170,21 @@ label {
 h2 {
   margin-bottom: 20px;
 }
+
+.offer {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.offer-details {
+  margin-bottom: 10px;
+}
+
+.offer-details div {
+  margin-bottom: 5px;
+}
+
+.offer-details div:last-child {
+  margin-bottom: 0;
+}

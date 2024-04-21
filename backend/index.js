@@ -83,22 +83,25 @@ const lessonSchema = new mongoose.Schema({
 
 // Define booking schema
 const bookingSchema = new mongoose.Schema({
-  lessonId: {
+  tutor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  student: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Lesson",
+    ref: "User",
     required: true,
   },
-  studentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Student",
-    required: true,
-  },
-  bookingStatus: {
+  offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer", required: true },
+  startTime: { type: Date, required: true },
+  endTime: { type: Date, required: true },
+  status: {
     type: String,
     enum: ["pending", "confirmed", "cancelled"],
-    required: true,
+    default: "pending",
   },
-  paymentStatus: { type: String, enum: ["pending", "paid", "refunded"] },
+  subject: { type: String, required: true },
+
+  totalPrice: { type: Number, required: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 // Define review schema
@@ -159,7 +162,26 @@ const offerSchema = new mongoose.Schema({
       return this.type === "single";
     },
   },
+  status: {
+    type: String,
+    enum: ["pending", "confirmed", "cancelled"],
+    default: "pending",
+  },
+  duration: {
+    type: Number,
+    required: true,
+  },
+  isPaid: {
+    type: Boolean,
+    default: false,
+  },
+  isCompleted: {
+    type: Boolean,
+    default: false,
+  },
   uniqueCode: { type: String, required: true, unique: true }, // Ensure unique code is unique
+  date: { type: Date }, // Add date field
+  time: { type: String }, // Add time field
   timestamp: {
     type: Date,
     default: Date.now,
@@ -510,7 +532,7 @@ app.get("/inbox/usernames", authenticateToken, async (req, res) => {
       id: user._id,
       username: user.username,
     }));
-
+    console.log({ users: userData });
     res.status(200).json({ users: userData }); // Send the user IDs and usernames as response
   } catch (error) {
     console.error("Error fetching usernames:", error);
@@ -549,8 +571,17 @@ app.get("/inbox/conversation/:userId", authenticateToken, async (req, res) => {
 });
 
 app.post("/create-offer", authenticateToken, async (req, res) => {
-  const { student, description, type, numberOfSessions, price, uniqueCode } =
-    req.body;
+  const {
+    student,
+    description,
+    type,
+    numberOfSessions,
+    price,
+    uniqueCode,
+    date,
+    time,
+    duration,
+  } = req.body;
   const tutor = req.user.id;
   const offer = new Offer({
     tutor,
@@ -560,6 +591,9 @@ app.post("/create-offer", authenticateToken, async (req, res) => {
     numberOfSessions,
     price,
     uniqueCode,
+    date,
+    time,
+    duration,
     timestamp: new Date(),
   });
 
@@ -590,7 +624,7 @@ app.get("/offers/:userId", authenticateToken, async (req, res) => {
         { tutor: tokenUserId, student: userId },
       ],
     }).populate("tutor student", "username"); // Populate tutor and student fields with their usernames
-
+    console.log({ offers });
     res.status(200).json({ offers });
   } catch (error) {
     console.error("Error fetching offers:", error);
