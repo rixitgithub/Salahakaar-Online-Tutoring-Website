@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import "./Navbar.css";
 import logo from "./logo.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaInbox } from "react-icons/fa"; // Import the inbox icon from react-icons/fa
 
 function Navbar() {
   // State to hold the user's authentication status and username
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
+  const [currentBalance, setCurrentBalance] = useState(0);
   const [isTutor, setIsTutor] = useState(false); // New state to track if the user is a tutor
-
+  const navigate = useNavigate();
   // useEffect to check if user is logged in and set the username
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -25,7 +26,9 @@ function Navbar() {
       })
         .then((res) => res.json())
         .then((data) => {
+          console.log(data);
           setUsername(data.username);
+          setCurrentBalance(data.currentBalance);
         })
         .catch((error) => {
           console.error("Error fetching user data:", error);
@@ -114,6 +117,9 @@ function Navbar() {
           ) : (
             <>
               <span className="username">Welcome, {username}</span>
+              <button className="btn" onClick={() => navigate("/payment")}>
+                <span className="outline">₹ {currentBalance}</span>
+              </button>
               <Link to="/inbox" className="inbox-icon">
                 {" "}
                 {/* Add Link to inbox */}

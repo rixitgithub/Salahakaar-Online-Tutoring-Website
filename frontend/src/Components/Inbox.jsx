@@ -8,20 +8,24 @@ const Inbox = () => {
   const [conversation, setConversation] = useState([]);
   const [messageContent, setMessageContent] = useState("");
   const [isTutor, setIsTutor] = useState(false);
-  const [showcreateOfferPopup, setShowCreateOfferPopup] = useState(false);
-  const [showcreateMeetingrPopup, setShowCreateMeetingPopup] = useState(false);
-  const [selectedOption, setSelectedOption] = useState("single"); // Make "single" the default option
+  const [showCreateOfferPopup, setShowCreateOfferPopup] = useState(false);
+  const [showCreateMeetingPopup, setShowCreateMeetingPopup] = useState(false);
+  const [selectedOption, setSelectedOption] = useState("single");
   const [uniqueCode, setUniqueCode] = useState("");
   const [price, setPrice] = useState("");
   const [numberOfSessions, setNumberOfSessions] = useState("");
   const [description, setDescription] = useState("");
   const [offers, setOffers] = useState([]);
-  const [date, setDate] = useState(""); // Add date state
-  const [time, setTime] = useState(""); // Add time state
-  const [duration, setDuration] = useState(""); // Add duration state
-  const navigate = useNavigate();
-
+  const [offerId, setOfferId] = useState([]);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [duration, setDuration] = useState("");
   const [roomCode, setRoomCode] = useState("");
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [personalBalance, setPersonalBalance] = useState();
+
+  const navigate = useNavigate();
 
   const handleEnterRoom = useCallback(() => {
     navigate(`/room/${roomCode}`);
@@ -30,6 +34,7 @@ const Inbox = () => {
   useEffect(() => {
     fetchUsernames();
     checkIfTutor();
+    fetchPersonalBalance();
   }, []);
 
   useEffect(() => {
@@ -49,7 +54,6 @@ const Inbox = () => {
         },
       });
       const data = await response.json();
-      console.log("usernames", data);
       setUsernames(data.users);
     } catch (error) {
       console.error("Error fetching usernames:", error);
@@ -146,7 +150,7 @@ const Inbox = () => {
   const handleCreateOffer = () => {
     setShowCreateOfferPopup(true);
     setUniqueCode(generateUniqueCode());
-    setSelectedOption("single"); // Make "single" the default option
+    setSelectedOption("single");
   };
 
   const handleCreateMeeting = () => {
@@ -180,9 +184,9 @@ const Inbox = () => {
           numberOfSessions:
             selectedOption === "multiple" ? numberOfSessions : null,
           price: price,
-          date: date, // Add date
-          time: time, // Add time
-          duration: duration, // Add duration
+          date: date,
+          time: time,
+          duration: duration,
         }),
       });
       const data = await response.json();
@@ -192,22 +196,75 @@ const Inbox = () => {
     }
   };
 
-  const handleAcceptOffer = async (offerId) => {
+  const handleAcceptOffer = async (offerId, amount) => {
+    setPaymentAmount(amount);
+    setShowPaymentPopup(true);
+    setOfferId(offerId);
+  };
+
+  const handleCancelPayment = () => {
+    setShowPaymentPopup(false);
+  };
+
+  // Function to fetch personal balance
+  const fetchPersonalBalance = async () => {
     try {
       const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:8531/payments/balance", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      setPersonalBalance(data.balance); // Set personal balance in state
+    } catch (error) {
+      console.error("Error fetching personal balance:", error);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    // 1. Determine the user's personal balance (You need to implement this logic)
+    // Example function, replace it with your implementation
+    console.log("offerId", offerId); // Retrieve offerId from state
+
+    // 2. Compare the personal balance with the payment amount
+    if (personalBalance < paymentAmount) {
+      // 3. If the personal balance is insufficient, show an error message
+      alert(
+        `You need to add ₹${paymentAmount - personalBalance} to your account.`
+      );
+      return;
+    }
+
+    try {
+      // 4. If the personal balance is sufficient, deduct the payment amount and send an update request
+      const token = localStorage.getItem("token");
+      console.log("ampunt", paymentAmount);
       const response = await fetch(
-        `http://localhost:8531/accept-offer/${offerId}`,
+        "http://localhost:8531/update-personal-balance",
         {
-          method: "POST",
+          method: "PUT",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify({
+            offerId: offerId, // Use the offerId from state
+            amount: paymentAmount,
+          }),
         }
       );
-      const data = await response.json();
-      // Handle success
+
+      // Handle the response accordingly
+      // For example, show a success message or update the UI
+      console.log("Payment successful");
+
+      // Close the payment popup
+      setShowPaymentPopup(false);
     } catch (error) {
-      console.error("Error accepting offer:", error);
+      console.error("Error confirming payment:", error);
+      // Handle the error, show an error message, or retry the operation
     }
   };
 
@@ -221,6 +278,8 @@ const Inbox = () => {
     }
     return result;
   };
+
+  const handleJoinMeeting = () => {};
 
   return (
     <div className="inbox-container">
@@ -259,19 +318,8 @@ const Inbox = () => {
           </>
         )}
       </div>
-      {!isTutor && (
-        <div className="enter-room">
-          <input
-            type="text"
-            placeholder="Enter room code"
-            value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value)}
-          />
-          <button onClick={handleEnterRoom}>Enter Room</button>
-        </div>
-      )}
 
-      {showcreateMeetingrPopup && (
+      {showCreateMeetingPopup && (
         <div className="popup-overlay" onClick={handleClosePopup}>
           <div className="popup" onClick={(e) => e.stopPropagation()}>
             <span className="close" onClick={handleClosePopup}>
@@ -286,7 +334,7 @@ const Inbox = () => {
         </div>
       )}
 
-      {showcreateOfferPopup && (
+      {showCreateOfferPopup && (
         <div className="popup-overlay" onClick={handleClosePopup}>
           <div className="popup" onClick={(e) => e.stopPropagation()}>
             <span className="close" onClick={handleClosePopup}>
@@ -416,6 +464,12 @@ const Inbox = () => {
         {offers.map((offer, index) => (
           <div key={index} className="offer">
             <div className="offer-details">
+              {offer.status === "confirmed" && (
+                <div className="confirmation-tag">Confirmed</div>
+              )}
+              {offer.status === "completed" && (
+                <div className="confirmation-tag">Completed</div>
+              )}
               <div>Description: {offer.description}</div>
               <div>Type: {offer.type}</div>
               <div>Price: {offer.price}</div>
@@ -431,10 +485,20 @@ const Inbox = () => {
                 Pending <span className="icon">⏰</span>
               </div>
             )}
+            {offer.status === "confirmed" && (
+              <div className="offer-actions">
+                {/* Render the "Join" button here */}
+                <button onClick={() => navigate(`/room/${offer.uniqueCode}`)}>
+                  Join at {offer.time}
+                </button>
+              </div>
+            )}
             {!isTutor && (
               <div className="offer-actions">
                 {offer.status === "pending" && (
-                  <button onClick={() => handleAcceptOffer(offer._id)}>
+                  <button
+                    onClick={() => handleAcceptOffer(offer._id, offer.price)}
+                  >
                     Accept
                   </button>
                 )}
@@ -443,6 +507,23 @@ const Inbox = () => {
           </div>
         ))}
       </div>
+
+      {/* Payment Popup */}
+      {showPaymentPopup && (
+        <div className="popup-overlay" onClick={handleCancelPayment}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <span className="close" onClick={handleCancelPayment}>
+              &times;
+            </span>
+            <div className="popup-content">
+              <h2>Payment</h2>
+              <p>Do you want to pay ₹{paymentAmount} from your account?</p>
+              <button onClick={handleConfirmPayment}>Pay</button>
+              <button onClick={handleCancelPayment}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

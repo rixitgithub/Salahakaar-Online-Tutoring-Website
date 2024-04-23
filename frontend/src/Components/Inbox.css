@@ -188,3 +188,10 @@ h2 {
 .offer-details div:last-child {
   margin-bottom: 0;
 }
+
+.confirmation-tag {
+  background-color: green;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+}

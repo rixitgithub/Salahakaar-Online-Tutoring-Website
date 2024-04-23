@@ -12,6 +12,7 @@ import SelTutor from "./Components/SelTutor";
 import TutorDetails from "./Components/TutorDetails.jsx";
 import Inbox from "./Components/Inbox.jsx";
 import RoomPage from "./Components/RoomPage.jsx";
+import PaymentPage from "./Components/PaymentPage.jsx";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/tutor-details/:tutorId" element={<TutorDetails />} />
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/room/:roomCode" element={<RoomPage />} />
+        <Route path="/payment" element={<PaymentPage />} />
       </Routes>
     </Router>
   );

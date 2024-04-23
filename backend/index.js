@@ -1,10 +1,11 @@
-// index.js
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(cors());
@@ -31,6 +32,8 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   profilePicture: { type: String },
   bio: { type: String },
+  currentBalance: { type: Number, default: 0 },
+  paymentLogs: [{ type: mongoose.Schema.Types.ObjectId, ref: "PaymentLog" }],
 });
 
 // Define tutor schema
@@ -51,6 +54,7 @@ const tutorSchema = new mongoose.Schema({
   availability: { type: Boolean, default: true },
   rating: { type: Number },
   reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
+  numberOfLessons: { type: Number },
 });
 
 // Define student schema
@@ -60,25 +64,6 @@ const studentSchema = new mongoose.Schema({
   gradeLevel: { type: String },
   learningGoals: { type: String },
   preferredTutorCharacteristics: { type: String },
-});
-
-// Define lesson schema
-const lessonSchema = new mongoose.Schema({
-  tutorId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Tutor",
-    required: true,
-  },
-  studentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Student",
-    required: true,
-  },
-  subject: { type: String, required: true },
-  dateTime: { type: Date, required: true },
-  duration: { type: Number, required: true },
-  location: { type: String },
-  virtualPlatform: { type: String },
 });
 
 // Define booking schema
@@ -106,9 +91,13 @@ const bookingSchema = new mongoose.Schema({
 
 // Define review schema
 const reviewSchema = new mongoose.Schema({
-  lessonId: {
+  offerUniqueCode: {
+    type: String,
+    required: true,
+  },
+  tutorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Lesson",
+    ref: "Tutor",
     required: true,
   },
   reviewerId: {
@@ -187,17 +176,27 @@ const offerSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+const paymentLogSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  createdAt: { type: Date, default: Date.now },
+  amount: { type: Number, required: true },
+  description: { type: String },
+  status: {
+    type: String,
+    enum: ["pending", "completed", "failed"],
+    default: "pending",
+  },
+});
 
 // Create models
 const User = mongoose.model("User", userSchema);
 const Tutor = mongoose.model("Tutor", tutorSchema);
 const Student = mongoose.model("Student", studentSchema);
-const Lesson = mongoose.model("Lesson", lessonSchema);
 const Booking = mongoose.model("Booking", bookingSchema);
 const Review = mongoose.model("Review", reviewSchema);
 const Message = mongoose.model("Message", messageSchema);
 const Offer = mongoose.model("Offer", offerSchema);
-
+const PaymentLog = mongoose.model("PaymentLog", paymentLogSchema);
 // Middleware to authenticate requests
 // Middleware to authenticate requests
 const authenticateToken = (req, res, next) => {
@@ -643,7 +642,6 @@ app.get("/userdetails", authenticateToken, async (req, res) => {
 
     // Check if the user exists
     if (user) {
-      console.log({ user });
       // If the user exists, return the user details as JSON in the response
       res.status(200).json({
         userId,
@@ -657,6 +655,258 @@ app.get("/userdetails", authenticateToken, async (req, res) => {
   } catch (error) {
     // If there's an error, return a 500 status along with an error message
     console.error("Error fetching user details:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Route to fetch user's current balance
+app.get("/payments/balance", authenticateToken, async (req, res) => {
+  const userId = req.user.id; // Assuming you have user authentication middleware
+
+  try {
+    // Fetch user from database
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ balance: user.currentBalance });
+  } catch (error) {
+    console.error("Error fetching user balance:", error);
+    res.status(500).json({ error: "Failed to fetch user balance" });
+  }
+});
+
+app.put("/update-personal-balance", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { amount, offerId } = req.body;
+    console.log("offerId", offerId);
+    console.log("amoutn", amount);
+    // Fetch user from database
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log("prev bal", user.currentBalance);
+    // Update user's personal balance
+    user.currentBalance = user.currentBalance - amount;
+    await user.save();
+    console.log("new bal", user.currentBalance);
+    const offer = await Offer.findById(offerId);
+
+    if (!offer) {
+      return res.status(404).json({ error: "Offer not found" });
+    }
+
+    // Update offer status and isPaid flag
+    offer.status = "confirmed";
+    offer.isPaid = true;
+
+    // Save the changes to the database
+    await offer.save();
+    return res
+      .status(200)
+      .json({ message: "Personal balance updated successfully" });
+  } catch (error) {
+    console.error("Error updating personal balance:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Route to fetch user's payment logs
+app.get("/payments/logs", authenticateToken, async (req, res) => {
+  const userId = req.user.id; // Assuming you have user authentication middleware
+
+  try {
+    // Fetch user's payment logs from database
+    const user = await User.findById(userId).populate("paymentLogs");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ logs: user.paymentLogs });
+  } catch (error) {
+    console.error("Error fetching payment logs:", error);
+    res.status(500).json({ error: "Failed to fetch payment logs" });
+  }
+});
+
+// Route to add money to user's account
+app.post("/payments/add", authenticateToken, async (req, res) => {
+  console.log("in payeent");
+  const userId = req.user.id; // Assuming you have user authentication middleware
+  const { amount, paymentMethodId } = req.body;
+
+  try {
+    // Fetch user from database
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Use Stripe to confirm payment method and add money to user's account
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // Amount in cents
+      currency: "usd",
+      payment_method: paymentMethodId,
+      confirmation_method: "manual",
+      confirm: true,
+    });
+
+    // Update user's balance
+    user.currentBalance += amount;
+    await user.save();
+
+    // Log payment details (assuming you have a paymentLogs field in the user model)
+
+    res.json({ balance: user.currentBalance, logs: user.paymentLogs });
+  } catch (error) {
+    console.error("Error adding money to user account:", error);
+    res.status(500).json({ error: "Failed to add money to user account" });
+  }
+});
+
+app.get("/personal-balance", authenticateToken, async (req, res) => {
+  try {
+    // Extract user ID from the authenticated user object
+    const userId = req.user.id;
+
+    // Retrieve user from the database using the user ID
+    const user = await User.findById(userId);
+
+    // Check if the user exists
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Extract and send the personal balance as response
+    const personalBalance = user.personalBalance;
+    res.json({ personalBalance });
+  } catch (error) {
+    console.error("Error fetching personal balance:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/confirm-payment", authenticateToken, async (req, res) => {
+  try {
+    const { offerId } = req.body;
+
+    // Fetch offer from database
+    const offer = await Offer.findById(offerId);
+
+    if (!offer) {
+      return res.status(404).json({ error: "Offer not found" });
+    }
+
+    // Update offer status and isPaid flag
+    offer.status = "confirmed";
+    offer.isPaid = true;
+
+    // Save the changes to the database
+    await offer.save();
+
+    return res
+      .status(200)
+      .json({ message: "Payment confirmed and offer updated successfully" });
+  } catch (error) {
+    console.error("Error confirming payment and updating offer:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/submit-review", authenticateToken, async (req, res) => {
+  try {
+    // Destructure the request body
+    const { roomCode, rating, review } = req.body;
+    console.log(roomCode, rating, review);
+
+    // Assume you have a reviewerId available from user authentication middleware
+    const reviewerId = req.user.id;
+    console.log("reviewer", reviewerId);
+    // Check if a review with the given room code already exists
+    const existingReview = await Review.findOne({ offerUniqueCode: roomCode });
+
+    if (existingReview) {
+      return res
+        .status(400)
+        .json({ error: "Review already exists for this lesson" });
+    }
+
+    // Create a new review instance
+    const newReview = new Review({
+      offerUniqueCode: roomCode, // Use room code as lessonId
+      reviewerId: new mongoose.Types.ObjectId(reviewerId),
+      reviewText: review,
+      rating: rating,
+      timestamp: Date.now(),
+    });
+    console.log("new", newReview);
+    // Save the review to the database
+    await newReview.save();
+
+    res.status(200).json({ message: "Review submitted successfully" });
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/complete-lesson", authenticateToken, async (req, res) => {
+  try {
+    // Destructure the request body
+    const { roomCode } = req.body;
+    const userId = req.user.id;
+
+    const offer = await Offer.findOne({ uniqueCode: roomCode });
+
+    if (!offer.isCompleted) {
+      // Find the offer by room code and update its status to "completed"
+      const updatedOffer = await Offer.findOneAndUpdate(
+        { uniqueCode: roomCode },
+        { $set: { isCompleted: true, status: "completed" } },
+        { new: true }
+      );
+      console.log({ updatedOffer });
+      // Check if the offer was found and updated successfully
+      if (!updatedOffer) {
+        return res
+          .status(404)
+          .json({ error: "Offer not found or could not be updated" });
+      }
+      console.log("updatedOffer", updatedOffer);
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      console.log({ user });
+      // Update user's personal balance
+      const amountToAdd = 0.8 * updatedOffer.price;
+      console.log("amount", updatedOffer.price);
+      console.log(amountToAdd);
+      user.currentBalance = user.currentBalance + amountToAdd;
+      await user.save();
+      const tutor = await Tutor.findOne({ user: userId });
+      if (!tutor) {
+        console.log("Tutor not found");
+        // Handle case where tutor is not found
+        return;
+      }
+
+      // Increase the number of lessons by 1
+      tutor.numberOfLessons += 1;
+
+      // Save the updated tutor document
+      await tutor.save();
+    }
+
+    // Send a success response
+    res.status(200).json({ message: "Lesson marked as complete" });
+  } catch (error) {
+    console.error("Error marking lesson as complete:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
